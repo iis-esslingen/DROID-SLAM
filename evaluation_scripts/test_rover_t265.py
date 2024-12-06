@@ -172,7 +172,7 @@ if __name__ == '__main__':
     result_file_name = "t265_stereo_slam_trajectory.txt" if args.stereo else "t265_mono_slam_trajectory.txt"
     file_interface.write_tum_trajectory_file(os.path.join(args.output_path, result_file_name), traj_est_fused)
     
-    traj_ref = file_interface.read_tum_trajectory_file(args.groundtruth_path)
+    traj_ref = file_interface.read_tum_trajectory_file(args.ground_truth_path)
     traj_ref, traj_est = sync.associate_trajectories(traj_ref, traj_est_fused)
 
     result_ape = main_ape.ape(traj_ref, traj_est, est_name='traj', 

@@ -10,6 +10,7 @@ import os
 import glob 
 import time
 import argparse
+from pathlib import Path
 
 import torch.nn.functional as F
 from droid import Droid
@@ -62,8 +63,9 @@ def image_stream(datapath, use_depth=False, stride=1):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--datapath")
-    parser.add_argument("--outputpath")
+    parser.add_argument("--datapath", type=Path)
+    parser.add_argument("--outputpath", type=Path)
+    parser.add_argument("--groundtruthpath", type=Path)
     
     parser.add_argument("--weights", default="droid.pth")
     parser.add_argument("--buffer", type=int, default=4096)
@@ -134,24 +136,21 @@ if __name__ == '__main__':
         orientations_quat_wxyz=traj_est[:,3:],
         timestamps=np.array(tstamps))
 
-    result_path = os.path.join(args.outputpath)
-    Path(result_path).mkdir(parents=True, exist_ok=True)
+    Path(args.outputpath).mkdir(parents=True, exist_ok=True)
     result_file_name = "d435i_rgbd_slam_trajectory.txt" if args.depth else "d435i_mono_slam_trajectory.txt"
-    file_interface.write_tum_trajectory_file(os.path.join(result_path, result_file_name), traj_est_fused)
+    file_interface.write_tum_trajectory_file(os.path.join(args.outputpath, result_file_name), traj_est_fused)
     
-    gt_file = os.path.join(args.datapath, 'groundtruth.txt')
-    traj_ref = file_interface.read_tum_trajectory_file(gt_file)
-
+    traj_ref = file_interface.read_tum_trajectory_file(args.groundtruthpath)
     traj_ref, traj_est = sync.associate_trajectories(traj_ref, traj_est_fused)
 
     result_ape = main_ape.ape(traj_ref, traj_est, est_name='traj', 
         pose_relation=PoseRelation.translation_part, align=True, correct_scale=False if args.depth else True)
 
-    with open(os.path.join(result_path, result_file_name.replace("slam_trajectory", "ape_results")), "w") as file:
+    with open(os.path.join(args.outputpath, result_file_name.replace("slam_trajectory", "ape_results")), "w") as file:
         file.write(json.dumps(result_ape.stats))
 
     # result_rpe = main_rpe.rpe(traj_ref, traj_est, est_name='traj', 
     #     pose_relation=PoseRelation.translation_part, align=True, correct_scale=False if args.depth else True)
 
-    # with open(os.path.join(result_path, result_file_name.replace("slam_trajectory", "rpe_results")), "w") as file:
+    # with open(os.path.join(args.outputpath, result_file_name.replace("slam_trajectory", "rpe_results")), "w") as file:
     #     file.write(json.dumps(result_rpe.stats))

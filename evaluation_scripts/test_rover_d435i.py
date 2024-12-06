@@ -66,7 +66,7 @@ if __name__ == '__main__':
     parser.add_argument("--outputpath")
     
     parser.add_argument("--weights", default="droid.pth")
-    parser.add_argument("--buffer", type=int, default=2048)
+    parser.add_argument("--buffer", type=int, default=4096)
     parser.add_argument("--image_size", default=[480, 640])
     parser.add_argument("--disable_vis", action="store_true")
     parser.add_argument("--stride", type=int, default=2)
@@ -150,8 +150,8 @@ if __name__ == '__main__':
     with open(os.path.join(result_path, result_file_name.replace("slam_trajectory", "ape_results")), "w") as file:
         file.write(json.dumps(result_ape.stats))
 
-    result_rpe = main_rpe.rpe(traj_ref, traj_est, est_name='traj', 
-        pose_relation=PoseRelation.translation_part, align=True, correct_scale=False if args.depth else True)
+    # result_rpe = main_rpe.rpe(traj_ref, traj_est, est_name='traj', 
+    #     pose_relation=PoseRelation.translation_part, align=True, correct_scale=False if args.depth else True)
 
-    with open(os.path.join(result_path, result_file_name.replace("slam_trajectory", "rpe_results")), "w") as file:
-        file.write(json.dumps(result_rpe.stats))
+    # with open(os.path.join(result_path, result_file_name.replace("slam_trajectory", "rpe_results")), "w") as file:
+    #     file.write(json.dumps(result_rpe.stats))

@@ -62,12 +62,6 @@ def image_stream(datapath, image_size=[400, 424], stereo=False, stride=1):
     intrinsics_vec = [544.53435553, 544.53435553, 432.19955826, 341.53060913]
     ht0, wd0 = 800, 848
 
-    mask_left = cv2.imread("../calib/mask_t265_cam0.png", cv2.IMREAD_GRAYSCALE)
-    mask_left = cv2.bitwise_not(mask_left)
-    if stereo:
-        mask_right = cv2.imread("../calib/mask_t265_cam1.png", cv2.IMREAD_GRAYSCALE)
-        mask_right = cv2.bitwise_not(mask_right) 
-
     # read all png images in folder
     images_left = sorted(glob.glob(os.path.join(datapath, 'cam_left/*.png')))[::stride]
     images_right = [x.replace('cam_left', 'cam_right') for x in images_left]
@@ -77,12 +71,10 @@ def image_stream(datapath, image_size=[400, 424], stereo=False, stride=1):
             continue
         tstamp = float(imgL.split('/')[-1][:-4])
         imgL = cv2.imread(imgL)
-        # imgL = cv2.bitwise_and(imgL, imgL, mask=mask_left)
         imgL = cv2.remap(imgL, map_l[0], map_l[1], interpolation=cv2.INTER_LINEAR)
         
         if stereo:
             imgR = cv2.imread(imgR)
-            # imgR = cv2.bitwise_and(imgR, imgR, mask=mask_right)
             imgR = cv2.remap(imgR, map_r[0], map_r[1], interpolation=cv2.INTER_LINEAR)
             images = [imgL, imgR]
         else:
@@ -112,7 +104,7 @@ if __name__ == '__main__':
     parser.add_argument("--outputpath")
 
     parser.add_argument("--weights", default="droid.pth")
-    parser.add_argument("--buffer", type=int, default=2048)
+    parser.add_argument("--buffer", type=int, default=4096)
     parser.add_argument("--stride", type=int, default=2)
     parser.add_argument("--image_size", default=[400, 424])
     parser.add_argument("--disable_vis", action="store_true")
@@ -190,10 +182,10 @@ if __name__ == '__main__':
     with open(os.path.join(result_path, result_file_name.replace("slam_trajectory", "ape_results")), "w") as file:
         file.write(json.dumps(result_ape.stats))
 
-    result_rpe = main_rpe.rpe(traj_ref, traj_est, est_name='traj', 
-        pose_relation=PoseRelation.translation_part, align=True, correct_scale=False if args.depth else True)
+    # result_rpe = main_rpe.rpe(traj_ref, traj_est, est_name='traj', 
+    #     pose_relation=PoseRelation.translation_part, align=True, correct_scale=False if args.depth else True)
 
-    with open(os.path.join(result_path, result_file_name.replace("slam_trajectory", "rpe_results")), "w") as file:
-        file.write(json.dumps(result_rpe.stats))
+    # with open(os.path.join(result_path, result_file_name.replace("slam_trajectory", "rpe_results")), "w") as file:
+    #     file.write(json.dumps(result_rpe.stats))
 
 

@@ -101,9 +101,9 @@ def image_stream(datapath, image_size=[400, 424], stereo=False, stride=1):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--datapath", type=Path)
-    parser.add_argument("--outputpath", type=Path)
-    parser.add_argument("--groundtruthpath", type=Path)
+    parser.add_argument("--data_path", type=Path)
+    parser.add_argument("--output_path", type=Path)
+    parser.add_argument("--ground_truth_path", type=Path)
 
     parser.add_argument("--weights", default="droid.pth")
     parser.add_argument("--buffer", type=int, default=4096)
@@ -131,13 +131,13 @@ if __name__ == '__main__':
 
     torch.multiprocessing.set_start_method('spawn')
 
-    print("Running evaluation on {}".format(args.datapath))
+    print("Running evaluation on {}".format(args.data_path))
     print(args)
 
     droid = Droid(args)
     time.sleep(5)
 
-    for (t, image, depth, intrinsics) in tqdm(image_stream(args.datapath, image_size=args.image_size,stereo=args.stereo, stride=args.stride)):
+    for (t, image, depth, intrinsics) in tqdm(image_stream(args.data_path, image_size=args.image_size,stereo=args.stereo, stride=args.stride)):
         if not args.disable_vis:
             show_image(image[0], "left_image")
             if args.stereo:
@@ -145,7 +145,7 @@ if __name__ == '__main__':
             
         droid.track(t, image, intrinsics=intrinsics)
 
-    traj_est = droid.terminate(image_stream(args.datapath, stride=args.stride))
+    traj_est = droid.terminate(image_stream(args.data_path, stride=args.stride))
 
     ### run evaluation ###
 
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     from pathlib import Path
     import json
 
-    image_path = os.path.join(args.datapath, 'cam_left')
+    image_path = os.path.join(args.data_path, 'cam_left')
     images_list = sorted(glob.glob(os.path.join(image_path, '*.png')))[::stride]
     tstamps = [float(x.split('/')[-1][:-4]) for x in images_list]
 
@@ -168,23 +168,23 @@ if __name__ == '__main__':
         orientations_quat_wxyz=traj_est[:,3:],
         timestamps=np.array(tstamps))
 
-    Path(args.outputpath).mkdir(parents=True, exist_ok=True)
+    Path(args.output_path).mkdir(parents=True, exist_ok=True)
     result_file_name = "t265_stereo_slam_trajectory.txt" if args.stereo else "t265_mono_slam_trajectory.txt"
-    file_interface.write_tum_trajectory_file(os.path.join(args.outputpath, result_file_name), traj_est_fused)
+    file_interface.write_tum_trajectory_file(os.path.join(args.output_path, result_file_name), traj_est_fused)
     
-    traj_ref = file_interface.read_tum_trajectory_file(args.groundtruthpath)
+    traj_ref = file_interface.read_tum_trajectory_file(args.groundtruth_path)
     traj_ref, traj_est = sync.associate_trajectories(traj_ref, traj_est_fused)
 
     result_ape = main_ape.ape(traj_ref, traj_est, est_name='traj', 
         pose_relation=PoseRelation.translation_part, align=True, correct_scale=False if args.depth else True)
 
-    with open(os.path.join(args.outputpath, result_file_name.replace("slam_trajectory", "ape_results")), "w") as file:
+    with open(os.path.join(args.output_path, result_file_name.replace("slam_trajectory", "ape_results")), "w") as file:
         file.write(json.dumps(result_ape.stats))
 
     # result_rpe = main_rpe.rpe(traj_ref, traj_est, est_name='traj', 
     #     pose_relation=PoseRelation.translation_part, align=True, correct_scale=False if args.depth else True)
 
-    # with open(os.path.join(args.outputpath, result_file_name.replace("slam_trajectory", "rpe_results")), "w") as file:
+    # with open(os.path.join(args.output_path, result_file_name.replace("slam_trajectory", "rpe_results")), "w") as file:
     #     file.write(json.dumps(result_rpe.stats))
 
 
